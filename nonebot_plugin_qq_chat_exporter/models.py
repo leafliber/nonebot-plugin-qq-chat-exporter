@@ -3,7 +3,7 @@
 """
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +26,7 @@ class MessageElementType(str, Enum):
 class MessageElement(BaseModel):
     """消息元素"""
     type: str
-    data: Dict[str, Any] = Field(default_factory=dict)
+    data: dict[str, Any] = Field(default_factory=dict)
 
 
 class SenderInfo(BaseModel):
@@ -44,7 +44,7 @@ class ExportMessage(BaseModel):
     message_type: str  # "message" or "message_sent"
     time: int  # Unix timestamp in seconds
     sender: SenderInfo
-    elements: List[MessageElement] = Field(default_factory=list)
+    elements: list[MessageElement] = Field(default_factory=list)
     raw_message: str = ""
     plain_text: str = ""
 
@@ -58,10 +58,10 @@ class ExportMetadata(BaseModel):
     chat_id: str
     chat_name: str = ""
     message_count: int = 0
-    time_range: Dict[str, Optional[int]] = Field(default_factory=dict)
+    time_range: dict[str, Optional[int]] = Field(default_factory=dict)
 
 
 class ExportData(BaseModel):
     """完整导出数据"""
     metadata: ExportMetadata
-    messages: List[ExportMessage] = Field(default_factory=list)
+    messages: list[ExportMessage] = Field(default_factory=list)

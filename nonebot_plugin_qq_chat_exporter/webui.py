@@ -40,7 +40,7 @@ app: FastAPI = driver.server_app
 async def index():
     """WebUI 首页"""
     template_path = Path(__file__).parent / "templates" / "index.html"
-    with open(template_path, "r", encoding="utf-8") as f:
+    with open(template_path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -48,10 +48,10 @@ async def index():
 async def export_messages(request: ExportRequest):
     """
     导出消息接口
-    
+
     Args:
         request: 导出请求
-        
+
     Returns:
         导出响应
     """
@@ -59,19 +59,19 @@ async def export_messages(request: ExportRequest):
         # 解析时间
         start_time = None
         end_time = None
-        
+
         if request.start_time:
             try:
-                start_time = datetime.fromisoformat(request.start_time.replace('Z', '+00:00'))
+                start_time = datetime.fromisoformat(request.start_time.replace("Z", "+00:00"))
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid start_time format")
-        
+
         if request.end_time:
             try:
-                end_time = datetime.fromisoformat(request.end_time.replace('Z', '+00:00'))
+                end_time = datetime.fromisoformat(request.end_time.replace("Z", "+00:00"))
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid end_time format")
-        
+
         # 根据聊天类型调用相应的导出函数
         if request.chat_type == "group":
             file_path = await export_group_messages(
@@ -89,13 +89,13 @@ async def export_messages(request: ExportRequest):
             )
         else:
             raise HTTPException(status_code=400, detail="Invalid chat_type")
-        
+
         return ExportResponse(
             success=True,
             message="导出成功",
             file_path=file_path
         )
-        
+
     except Exception as e:
         return ExportResponse(
             success=False,
