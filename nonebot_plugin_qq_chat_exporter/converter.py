@@ -19,6 +19,9 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
+# 常量定义
+UNKNOWN_USER_ID = "unknown"
+
 
 def parse_message_content(message_data: list[dict[str, Any]]) -> tuple[MessageContent, str, dict]:
     """
@@ -111,7 +114,7 @@ def convert_records_to_export_messages(
             if not hasattr(record, 'message'):
                 logger.warning(
                     "Message record %s missing 'message' attribute, skipping",
-                    getattr(record, "message_id", "unknown")
+                    getattr(record, "message_id", UNKNOWN_USER_ID)
                 )
                 failed_count += 1
                 continue
@@ -123,7 +126,7 @@ def convert_records_to_export_messages(
             if not message_data:
                 logger.debug(
                     "Message %s has empty message_data, creating minimal export",
-                    getattr(record, "message_id", "unknown")
+                    getattr(record, "message_id", UNKNOWN_USER_ID)
                 )
             
             content, text, resource_stats = parse_message_content(message_data)
@@ -134,11 +137,11 @@ def convert_records_to_export_messages(
 
             # 构建发送者信息
             # 增加对用户属性的防御性检查
-            user_id = getattr(user, 'user_id', 'unknown')
+            user_id = getattr(user, 'user_id', UNKNOWN_USER_ID)
             sender_uid = f"u_{user_id}"
             sender_name = getattr(user, 'user_name', None) or ""
             # uin 应该是用户的数字ID，如果获取失败则使用空字符串
-            user_uin = str(user_id) if user_id != 'unknown' else ""
+            user_uin = str(user_id) if user_id != UNKNOWN_USER_ID else ""
             sender = MessageSender(
                 uid=sender_uid,
                 uin=user_uin,
@@ -167,7 +170,7 @@ def convert_records_to_export_messages(
             else:
                 logger.warning(
                     "Message %s missing time attribute, using current time",
-                    getattr(record, "message_id", "unknown")
+                    getattr(record, "message_id", UNKNOWN_USER_ID)
                 )
                 timestamp = datetime.now().isoformat(timespec="milliseconds") + "Z"
 
@@ -213,7 +216,7 @@ def convert_records_to_export_messages(
             failed_count += 1
             logger.warning(
                 "Failed to convert message %s: %s - %s",
-                getattr(record, "message_id", "unknown"),
+                getattr(record, "message_id", UNKNOWN_USER_ID),
                 type(e).__name__,
                 str(e)
             )
@@ -223,7 +226,7 @@ def convert_records_to_export_messages(
             failed_count += 1
             logger.error(
                 "Unexpected error converting message %s: %s - %s",
-                getattr(record, "message_id", "unknown"),
+                getattr(record, "message_id", UNKNOWN_USER_ID),
                 type(e).__name__,
                 str(e),
                 exc_info=True

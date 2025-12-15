@@ -28,7 +28,7 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
-async def _load_records_with_info(records):
+async def _load_records_with_info(records: list[MessageRecord]):
     """
     批量加载消息记录及其关联的会话和用户信息
     
