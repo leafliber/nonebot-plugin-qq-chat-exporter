@@ -13,7 +13,16 @@ from nonebot_plugin_uninfo.orm import SessionModel, UserModel
 from sqlalchemy import select
 
 from .converter import convert_records_to_export_messages
-from .models import ExportData, ExportMetadata
+from .models import (
+    ChatInfo,
+    ExportData,
+    MessageTypes,
+    Resources,
+    ResourcesByType,
+    SenderStats,
+    Statistics,
+    TimeRange,
+)
 
 
 async def export_group_messages(
@@ -74,29 +83,77 @@ async def export_group_messages(
             records_with_info.append((record, session, user))
 
     # 转换消息格式
-    export_messages = convert_records_to_export_messages(records_with_info)
+    export_messages, statistics_data = convert_records_to_export_messages(
+        records_with_info, "group", group_id
+    )
+
+    # 创建聊天信息
+    chat_info = ChatInfo(
+        name=f"Group {group_id}",
+        type="group"
+    )
 
     # 计算时间范围
-    time_range = {}
+    time_range = TimeRange()
     if export_messages:
-        time_range["start"] = min(msg.time for msg in export_messages)
-        time_range["end"] = max(msg.time for msg in export_messages)
+        # 从第一条和最后一条消息获取时间范围
+        first_time = export_messages[0].timestamp
+        last_time = export_messages[-1].timestamp
+        
+        # 转换为datetime以计算天数
+        try:
+            dt_first = datetime.fromisoformat(first_time.replace('Z', '+00:00'))
+            dt_last = datetime.fromisoformat(last_time.replace('Z', '+00:00'))
+            duration_days = (dt_last - dt_first).days
+            
+            time_range.start = first_time
+            time_range.end = last_time
+            time_range.durationDays = duration_days
+        except Exception:
+            pass
 
-    # 创建元数据
-    metadata = ExportMetadata(
-        export_time=datetime.now(),
-        exporter="nonebot-plugin-qq-chat-exporter",
-        version="0.1.0",
-        chat_type="group",
-        chat_id=group_id,
-        chat_name=f"Group {group_id}",
-        message_count=len(export_messages),
-        time_range=time_range
+    # 创建统计信息
+    total_messages = len(export_messages)
+    message_types = MessageTypes(unknown=total_messages)
+    
+    # 转换发送者统计
+    senders = [
+        SenderStats(
+            uid=s["uid"],
+            name=s["name"],
+            messageCount=s["messageCount"],
+            percentage=s["percentage"]
+        )
+        for s in statistics_data["senders"]
+    ]
+
+    # 创建资源统计
+    resource_stats = statistics_data["resources"]
+    resources_by_type = ResourcesByType(
+        image=resource_stats["image"],
+        video=resource_stats["video"],
+        audio=resource_stats["audio"],
+        file=resource_stats["file"]
+    )
+    total_resources = sum(resource_stats.values())
+    resources = Resources(
+        total=total_resources,
+        byType=resources_by_type,
+        totalSize=0
+    )
+
+    statistics = Statistics(
+        totalMessages=total_messages,
+        timeRange=time_range,
+        messageTypes=message_types,
+        senders=senders,
+        resources=resources
     )
 
     # 创建导出数据
     export_data = ExportData(
-        metadata=metadata,
+        chatInfo=chat_info,
+        statistics=statistics,
         messages=export_messages
     )
 
@@ -175,29 +232,77 @@ async def export_private_messages(
             records_with_info.append((record, session, user))
 
     # 转换消息格式
-    export_messages = convert_records_to_export_messages(records_with_info)
+    export_messages, statistics_data = convert_records_to_export_messages(
+        records_with_info, "private", user_id
+    )
+
+    # 创建聊天信息
+    chat_info = ChatInfo(
+        name=f"User {user_id}",
+        type="private"
+    )
 
     # 计算时间范围
-    time_range = {}
+    time_range = TimeRange()
     if export_messages:
-        time_range["start"] = min(msg.time for msg in export_messages)
-        time_range["end"] = max(msg.time for msg in export_messages)
+        # 从第一条和最后一条消息获取时间范围
+        first_time = export_messages[0].timestamp
+        last_time = export_messages[-1].timestamp
+        
+        # 转换为datetime以计算天数
+        try:
+            dt_first = datetime.fromisoformat(first_time.replace('Z', '+00:00'))
+            dt_last = datetime.fromisoformat(last_time.replace('Z', '+00:00'))
+            duration_days = (dt_last - dt_first).days
+            
+            time_range.start = first_time
+            time_range.end = last_time
+            time_range.durationDays = duration_days
+        except Exception:
+            pass
 
-    # 创建元数据
-    metadata = ExportMetadata(
-        export_time=datetime.now(),
-        exporter="nonebot-plugin-qq-chat-exporter",
-        version="0.1.0",
-        chat_type="private",
-        chat_id=user_id,
-        chat_name=f"User {user_id}",
-        message_count=len(export_messages),
-        time_range=time_range
+    # 创建统计信息
+    total_messages = len(export_messages)
+    message_types = MessageTypes(unknown=total_messages)
+    
+    # 转换发送者统计
+    senders = [
+        SenderStats(
+            uid=s["uid"],
+            name=s["name"],
+            messageCount=s["messageCount"],
+            percentage=s["percentage"]
+        )
+        for s in statistics_data["senders"]
+    ]
+
+    # 创建资源统计
+    resource_stats = statistics_data["resources"]
+    resources_by_type = ResourcesByType(
+        image=resource_stats["image"],
+        video=resource_stats["video"],
+        audio=resource_stats["audio"],
+        file=resource_stats["file"]
+    )
+    total_resources = sum(resource_stats.values())
+    resources = Resources(
+        total=total_resources,
+        byType=resources_by_type,
+        totalSize=0
+    )
+
+    statistics = Statistics(
+        totalMessages=total_messages,
+        timeRange=time_range,
+        messageTypes=message_types,
+        senders=senders,
+        resources=resources
     )
 
     # 创建导出数据
     export_data = ExportData(
-        metadata=metadata,
+        chatInfo=chat_info,
+        statistics=statistics,
         messages=export_messages
     )
 
