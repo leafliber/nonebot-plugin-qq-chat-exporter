@@ -2,6 +2,8 @@
 消息转换器：将 chatrecorder 格式转换为 qq-chat-exporter 格式
 """
 import logging
+import time
+from datetime import datetime
 from typing import Any
 
 from nonebot_plugin_chatrecorder import MessageRecord
@@ -165,7 +167,6 @@ def convert_records_to_export_messages(
                     "Message %s missing time attribute, using current time",
                     getattr(record, "message_id", "unknown")
                 )
-                from datetime import datetime
                 timestamp = datetime.now().isoformat(timespec="milliseconds") + "Z"
 
             # 构建消息统计
@@ -180,8 +181,12 @@ def convert_records_to_export_messages(
             # 根据消息类型判断，一般 record.type 为 "message" 是普通消息
             is_system_message = getattr(record, 'type', 'message') != "message"
 
-            # 获取消息ID，如果不存在则生成一个
-            message_id = getattr(record, 'message_id', f"msg_{id(record)}")
+            # 获取消息ID，如果不存在则生成一个基于时间戳的唯一ID
+            message_id = getattr(record, 'message_id', None)
+            if not message_id:
+                # 使用纳秒时间戳作为唯一ID，确保不同记录不会产生相同ID
+                message_id = f"msg_{int(time.time() * 1000000)}"
+                logger.debug(f"Generated fallback message_id: {message_id}")
 
             # 构建导出消息
             export_msg = ExportMessage(
