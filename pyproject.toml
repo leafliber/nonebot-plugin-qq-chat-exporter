@@ -1,0 +1,29 @@
+[project]
+name = "nonebot-plugin-qq-chat-exporter"
+version = "0.1.0"
+description = "兼容qq-chat-exporter格式的QQ消息导出插件"
+authors = [
+    {name = "leafliber", email = "48828021+leafliber@users.noreply.github.com"},
+]
+dependencies = [
+    "nonebot2>=2.0.0",
+    "nonebot-adapter-onebot>=2.0.0",
+    "pydantic>=1.10.0",
+]
+requires-python = ">=3.8"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.urls]
+Homepage = "https://github.com/leafliber/nonebot-plugin-qq-chat-exporter"
+Repository = "https://github.com/leafliber/nonebot-plugin-qq-chat-exporter"
+
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["nonebot_plugin_qq_chat_exporter"]
+
+[tool.nonebot]
+plugins = ["nonebot_plugin_qq_chat_exporter"]
