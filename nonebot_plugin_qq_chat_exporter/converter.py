@@ -147,6 +147,10 @@ def convert_records_to_export_messages(
                 processingTime=0
             )
 
+            # 判断是否为系统消息
+            # 根据消息类型判断，一般 record.type 为 "message" 是普通消息
+            is_system_message = record.type != "message"
+
             # 构建导出消息
             export_msg = ExportMessage(
                 messageId=record.message_id,
@@ -156,7 +160,7 @@ def convert_records_to_export_messages(
                 sender=sender,
                 receiver=receiver,
                 messageType=5,
-                isSystemMessage=True,
+                isSystemMessage=is_system_message,
                 isRecalled=False,
                 isTempMessage=False,
                 content=content,

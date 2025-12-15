@@ -12,130 +12,117 @@ sys.path.insert(0, str(project_root))
 
 # 直接导入 models 模块（绕过 __init__.py）
 from nonebot_plugin_qq_chat_exporter.models import (
-    ExportMessage,
-    ExportMetadata,
+    ChatInfo,
     ExportData,
-    SenderInfo,
-    MessageElement,
+    ExportMessage,
+    MessageContent,
+    MessageReceiver,
+    MessageSender,
+    MessageStats,
+    Statistics,
 )
 
 
-def test_message_element():
-    """测试消息元素"""
-    element = MessageElement(type="text", data={"text": "Hello World"})
-    assert element.type == "text"
-    assert element.data["text"] == "Hello World"
-    print("✓ MessageElement 测试通过")
+def test_message_sender():
+    """测试消息发送者"""
+    sender = MessageSender(uid="u_123", uin="123", name="测试用户")
+    assert sender.uid == "u_123"
+    assert sender.name == "测试用户"
+    print("✓ MessageSender 测试通过")
 
 
-def test_sender_info():
-    """测试发送者信息"""
-    sender = SenderInfo(
-        user_id="123456",
-        nickname="测试用户",
-        card="群名片",
-        role="member"
-    )
-    assert sender.user_id == "123456"
-    assert sender.nickname == "测试用户"
-    print("✓ SenderInfo 测试通过")
+def test_message_content():
+    """测试消息内容"""
+    content = MessageContent(text="Hello World", raw="Hello World")
+    assert content.text == "Hello World"
+    assert content.raw == "Hello World"
+    print("✓ MessageContent 测试通过")
 
 
 def test_export_message():
     """测试导出消息"""
-    sender = SenderInfo(user_id="123", nickname="Alice")
+    sender = MessageSender(uid="u_123", uin="123", name="Alice")
+    receiver = MessageReceiver(uid="789", type="group")
+    content = MessageContent(text="Hello", raw="Hello")
+    stats = MessageStats(elementCount=1, textLength=5)
     msg = ExportMessage(
-        message_id="msg_001",
-        message_type="message",
-        time=1704067200,
+        messageId="msg_001",
+        timestamp="2025-01-01T03:20:01.000Z",
         sender=sender,
-        elements=[
-            MessageElement(type="text", data={"text": "Hello"}),
-            MessageElement(type="image", data={"url": "http://example.com/img.jpg"}),
-        ],
-        raw_message="Hello [图片]",
-        plain_text="Hello"
+        receiver=receiver,
+        content=content,
+        stats=stats
     )
-    assert msg.message_id == "msg_001"
-    assert len(msg.elements) == 2
-    assert msg.sender.nickname == "Alice"
+    assert msg.messageId == "msg_001"
+    assert msg.sender.name == "Alice"
     print("✓ ExportMessage 测试通过")
 
 
-def test_export_metadata():
-    """测试导出元数据"""
-    metadata = ExportMetadata(
-        chat_type="group",
-        chat_id="789012",
-        chat_name="测试群聊",
-        message_count=100,
-        time_range={"start": 1704067200, "end": 1704153600}
+def test_chat_info():
+    """测试聊天信息"""
+    chat_info = ChatInfo(
+        name="测试群聊",
+        type="group"
     )
-    assert metadata.chat_type == "group"
-    assert metadata.message_count == 100
-    print("✓ ExportMetadata 测试通过")
+    assert chat_info.name == "测试群聊"
+    assert chat_info.type == "group"
+    print("✓ ChatInfo 测试通过")
 
 
 def test_export_data():
     """测试完整导出数据"""
-    metadata = ExportMetadata(
-        chat_type="private",
-        chat_id="123",
-        message_count=1
-    )
-    sender = SenderInfo(user_id="456", nickname="Bob")
+    chat_info = ChatInfo(name="测试群", type="private")
+    statistics = Statistics(totalMessages=1)
+    sender = MessageSender(uid="u_456", uin="456", name="Bob")
+    receiver = MessageReceiver(uid="789", type="private")
+    content = MessageContent(text="Test", raw="Test")
+    stats = MessageStats(elementCount=1, textLength=4)
     msg = ExportMessage(
-        message_id="test",
-        message_type="message",
-        time=1704067200,
+        messageId="test",
+        timestamp="2025-01-01T03:20:01.000Z",
         sender=sender,
-        elements=[MessageElement(type="text", data={"text": "Test"})],
-        raw_message="Test",
-        plain_text="Test"
+        receiver=receiver,
+        content=content,
+        stats=stats
     )
-    export_data = ExportData(metadata=metadata, messages=[msg])
+    export_data = ExportData(chatInfo=chat_info, statistics=statistics, messages=[msg])
 
-    assert export_data.metadata.chat_type == "private"
+    assert export_data.chatInfo.type == "private"
     assert len(export_data.messages) == 1
     print("✓ ExportData 测试通过")
 
 
 def test_json_export():
     """测试 JSON 导出"""
-    metadata = ExportMetadata(
-        chat_type="group",
-        chat_id="999",
-        message_count=2
-    )
+    chat_info = ChatInfo(name="测试群", type="group")
+    statistics = Statistics(totalMessages=2)
 
     messages = [
         ExportMessage(
-            message_id="msg1",
-            message_type="message",
-            time=1704067200,
-            sender=SenderInfo(user_id="1", nickname="User1"),
-            elements=[MessageElement(type="text", data={"text": "Message 1"})],
-            raw_message="Message 1",
-            plain_text="Message 1"
+            messageId="msg1",
+            timestamp="2025-01-01T03:20:01.000Z",
+            sender=MessageSender(uid="u_1", uin="1", name="User1"),
+            receiver=MessageReceiver(uid="999", type="group"),
+            content=MessageContent(text="Message 1", raw="Message 1"),
+            stats=MessageStats(elementCount=1, textLength=9)
         ),
         ExportMessage(
-            message_id="msg2",
-            message_type="message",
-            time=1704067260,
-            sender=SenderInfo(user_id="2", nickname="User2"),
-            elements=[MessageElement(type="text", data={"text": "Message 2"})],
-            raw_message="Message 2",
-            plain_text="Message 2"
+            messageId="msg2",
+            timestamp="2025-01-01T03:20:02.000Z",
+            sender=MessageSender(uid="u_2", uin="2", name="User2"),
+            receiver=MessageReceiver(uid="999", type="group"),
+            content=MessageContent(text="Message 2", raw="Message 2"),
+            stats=MessageStats(elementCount=1, textLength=9)
         )
     ]
 
-    export_data = ExportData(metadata=metadata, messages=messages)
+    export_data = ExportData(chatInfo=chat_info, statistics=statistics, messages=messages)
 
     # 测试序列化
     json_dict = export_data.model_dump(mode="json")
-    assert json_dict["metadata"]["chat_id"] == "999"
+    assert json_dict["chatInfo"]["name"] == "测试群"
     assert len(json_dict["messages"]) == 2
-    assert json_dict["messages"][0]["sender"]["nickname"] == "User1"
+    assert json_dict["messages"][0]["sender"]["name"] == "User1"
 
     # 测试可以转换为 JSON 字符串
     import json
@@ -154,10 +141,10 @@ def main():
     print()
 
     tests = [
-        test_message_element,
-        test_sender_info,
+        test_message_sender,
+        test_message_content,
         test_export_message,
-        test_export_metadata,
+        test_chat_info,
         test_export_data,
         test_json_export,
     ]
@@ -176,7 +163,7 @@ def main():
     print()
     print("📝 测试总结:")
     print("  - 数据模型定义正确")
-    print("  - 消息元素结构正确")
+    print("  - 消息内容结构正确")
     print("  - JSON 序列化功能正常")
     print("  - 插件核心功能可用")
     print()
