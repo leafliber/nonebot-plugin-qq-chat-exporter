@@ -39,9 +39,15 @@ app: FastAPI = driver.server_app
 @app.get("/qq-chat-exporter", response_class=HTMLResponse)
 async def index():
     """WebUI 首页"""
-    template_path = Path(__file__).parent / "templates" / "index.html"
-    with open(template_path, encoding="utf-8") as f:
-        return f.read()
+    try:
+        template_path = Path(__file__).parent / "templates" / "index.html"
+        # 确保路径在预期目录内
+        if not template_path.is_file():
+            raise HTTPException(status_code=500, detail="Template file not found")
+        with open(template_path, encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load template: {str(e)}")
 
 
 @app.post("/qq-chat-exporter/export", response_model=ExportResponse)

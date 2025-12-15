@@ -13,6 +13,7 @@ python = "^3.9"
 nonebot2 = "^2.3.0"
 nonebot-plugin-chatrecorder = "^0.7.0"
 nonebot-plugin-htmlrender = "^0.3.0"
+pydantic = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 nonebot2 = { version = "^2.3.0", extras = ["fastapi"] }

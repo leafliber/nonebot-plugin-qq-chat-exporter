@@ -1,12 +1,15 @@
 """
 消息转换器：将 chatrecorder 格式转换为 qq-chat-exporter 格式
 """
+import logging
 from typing import Any
 
 from nonebot_plugin_chatrecorder import MessageRecord
 from nonebot_plugin_uninfo.orm import SessionModel, UserModel
 
 from .models import ExportMessage, MessageElement, SenderInfo
+
+logger = logging.getLogger(__name__)
 
 
 def parse_message_elements(message_data: list[dict[str, Any]]) -> tuple[list[MessageElement], str]:
@@ -60,52 +63,6 @@ def parse_message_elements(message_data: list[dict[str, Any]]) -> tuple[list[Mes
     return elements, raw_message
 
 
-async def convert_record_to_export_message(
-    record: MessageRecord,
-    session: SessionModel,
-    user: UserModel
-) -> ExportMessage:
-    """
-    将 MessageRecord 转换为 ExportMessage
-
-    Args:
-        record: 消息记录
-        session: 会话模型
-        user: 用户模型
-
-    Returns:
-        导出消息
-    """
-    # 解析消息内容
-    message_data = record.message if isinstance(record.message, list) else []
-    elements, raw_message = parse_message_elements(message_data)
-
-    # 构建发送者信息
-    sender = SenderInfo(
-        user_id=user.user_id,
-        nickname=user.user_name or "",
-        card="",  # chatrecorder 不存储群名片，留空
-        role="member"
-    )
-
-    # 转换时间戳（转为秒）
-    timestamp = int(record.time.timestamp())
-
-    # 构建导出消息
-    export_msg = ExportMessage(
-        message_id=record.message_id,
-        message_seq=None,  # chatrecorder 不存储序列号
-        message_type=record.type,
-        time=timestamp,
-        sender=sender,
-        elements=elements,
-        raw_message=raw_message,
-        plain_text=record.plain_text
-    )
-
-    return export_msg
-
-
 def convert_records_to_export_messages(
     records: list[tuple[MessageRecord, SessionModel, UserModel]]
 ) -> list[ExportMessage]:
@@ -150,9 +107,21 @@ def convert_records_to_export_messages(
             )
 
             export_messages.append(export_msg)
-        except Exception:
+        except (KeyError, AttributeError, ValueError) as e:
             # 记录转换失败的消息，但继续处理其他消息
-            # 静默跳过，避免打印敏感信息
+            logger.warning(
+                "Failed to convert message %s: %s",
+                getattr(record, "message_id", "unknown"),
+                type(e).__name__
+            )
+            continue
+        except Exception as e:
+            # 捕获其他未预期的异常
+            logger.error(
+                "Unexpected error converting message %s: %s",
+                getattr(record, "message_id", "unknown"),
+                type(e).__name__
+            )
             continue
 
     return export_messages
