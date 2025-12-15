@@ -137,9 +137,11 @@ def convert_records_to_export_messages(
             user_id = getattr(user, 'user_id', 'unknown')
             sender_uid = f"u_{user_id}"
             sender_name = getattr(user, 'user_name', None) or ""
+            # uin 应该是用户的数字ID，如果获取失败则使用空字符串
+            user_uin = str(user_id) if user_id != 'unknown' else ""
             sender = MessageSender(
                 uid=sender_uid,
-                uin=str(user_id),
+                uin=user_uin,
                 name=sender_name
             )
 

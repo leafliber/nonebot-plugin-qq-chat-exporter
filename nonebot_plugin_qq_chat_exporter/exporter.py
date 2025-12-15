@@ -45,8 +45,8 @@ async def _load_records_with_info(records):
     
     records_with_info = []
     
-    # 收集所有需要查询的session_persist_id
-    session_ids = list(set(r.session_persist_id for r in records if hasattr(r, 'session_persist_id')))
+    # 收集所有需要查询的session_persist_id（使用set去重）
+    session_ids = list({r.session_persist_id for r in records if hasattr(r, 'session_persist_id')})
     
     if not session_ids:
         logger.warning("No valid session IDs found in records")
@@ -59,12 +59,12 @@ async def _load_records_with_info(records):
         sessions_result = await db_session.scalars(sessions_stmt)
         sessions_dict = {s.id: s for s in sessions_result.all()}
         
-        # 收集所有需要查询的user_persist_id
-        user_ids = list(set(
+        # 收集所有需要查询的user_persist_id（使用set去重）
+        user_ids = list({
             s.user_persist_id 
             for s in sessions_dict.values() 
             if hasattr(s, 'user_persist_id')
-        ))
+        })
         
         if not user_ids:
             logger.warning("No valid user IDs found in sessions")
