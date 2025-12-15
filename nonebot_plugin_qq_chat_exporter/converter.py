@@ -101,11 +101,29 @@ def convert_records_to_export_messages(
     export_messages = []
     sender_stats = {}
     resource_totals = {"image": 0, "video": 0, "audio": 0, "file": 0}
+    failed_count = 0
 
     for record, session, user in records:
         try:
+            # 验证 record 对象的必要属性
+            if not hasattr(record, 'message'):
+                logger.warning(
+                    "Message record %s missing 'message' attribute, skipping",
+                    getattr(record, "message_id", "unknown")
+                )
+                failed_count += 1
+                continue
+
             # 解析消息内容
             message_data = record.message if isinstance(record.message, list) else []
+            
+            # 如果 message_data 为空或无效，记录并跳过
+            if not message_data:
+                logger.debug(
+                    "Message %s has empty message_data, creating minimal export",
+                    getattr(record, "message_id", "unknown")
+                )
+            
             content, text, resource_stats = parse_message_content(message_data)
 
             # 更新资源统计
@@ -113,11 +131,13 @@ def convert_records_to_export_messages(
                 resource_totals[key] += resource_stats[key]
 
             # 构建发送者信息
-            sender_uid = f"u_{user.user_id}"
-            sender_name = user.user_name or ""
+            # 增加对用户属性的防御性检查
+            user_id = getattr(user, 'user_id', 'unknown')
+            sender_uid = f"u_{user_id}"
+            sender_name = getattr(user, 'user_name', None) or ""
             sender = MessageSender(
                 uid=sender_uid,
-                uin=user.user_id,
+                uin=str(user_id),
                 name=sender_name
             )
 
@@ -132,12 +152,21 @@ def convert_records_to_export_messages(
 
             # 构建接收者信息
             receiver = MessageReceiver(
-                uid=chat_id,
+                uid=str(chat_id),
                 type=chat_type
             )
 
             # 转换时间戳为ISO格式
-            timestamp = record.time.isoformat(timespec="milliseconds") + "Z"
+            # 增加对时间属性的防御性检查
+            if hasattr(record, 'time') and record.time:
+                timestamp = record.time.isoformat(timespec="milliseconds") + "Z"
+            else:
+                logger.warning(
+                    "Message %s missing time attribute, using current time",
+                    getattr(record, "message_id", "unknown")
+                )
+                from datetime import datetime
+                timestamp = datetime.now().isoformat(timespec="milliseconds") + "Z"
 
             # 构建消息统计
             stats = MessageStats(
@@ -149,11 +178,14 @@ def convert_records_to_export_messages(
 
             # 判断是否为系统消息
             # 根据消息类型判断，一般 record.type 为 "message" 是普通消息
-            is_system_message = record.type != "message"
+            is_system_message = getattr(record, 'type', 'message') != "message"
+
+            # 获取消息ID，如果不存在则生成一个
+            message_id = getattr(record, 'message_id', f"msg_{id(record)}")
 
             # 构建导出消息
             export_msg = ExportMessage(
-                messageId=record.message_id,
+                messageId=str(message_id),
                 messageSeq="",
                 msgRandom="0",
                 timestamp=timestamp,
@@ -170,21 +202,35 @@ def convert_records_to_export_messages(
 
             export_messages.append(export_msg)
         except (KeyError, AttributeError, ValueError) as e:
-            # 记录转换失败的消息，但继续处理其他消息
+            # 记录转换失败的消息，包含详细错误信息
+            failed_count += 1
             logger.warning(
-                "Failed to convert message %s: %s",
+                "Failed to convert message %s: %s - %s",
                 getattr(record, "message_id", "unknown"),
-                type(e).__name__
+                type(e).__name__,
+                str(e)
             )
             continue
         except Exception as e:
             # 捕获其他未预期的异常
+            failed_count += 1
             logger.error(
-                "Unexpected error converting message %s: %s",
+                "Unexpected error converting message %s: %s - %s",
                 getattr(record, "message_id", "unknown"),
-                type(e).__name__
+                type(e).__name__,
+                str(e),
+                exc_info=True
             )
             continue
+
+    # 记录处理结果
+    if failed_count > 0:
+        logger.info(
+            "Conversion completed: %d succeeded, %d failed out of %d total",
+            len(export_messages),
+            failed_count,
+            len(records)
+        )
 
     # 计算发送者统计百分比
     total_messages = len(export_messages)
