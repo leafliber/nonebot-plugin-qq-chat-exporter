@@ -20,7 +20,7 @@ except ImportError:
 
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import List, Dict, Optional, Any
 
 from .config import Config
 from .exporter import ChatExporter
@@ -118,7 +118,7 @@ if NONEBOT_AVAILABLE:
         )
 
 
-    def _extract_resources(message: Message) -> list[ContentResource]:
+    def _extract_resources(message: Message) -> List[ContentResource]:
         """Extract resources from message"""
         resources = []
         

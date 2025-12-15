@@ -6,8 +6,8 @@ import sys
 import json
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add current directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
 
 # Import the modules directly
 from nonebot_plugin_qq_chat_exporter import models
@@ -76,7 +76,7 @@ def main():
     )
     
     # Export to file
-    output_path = "/tmp/example_export.json"
+    output_path = str(Path(__file__).parent / "example_export.json")
     export_data = exp.export(output_path)
     
     print(f"✓ Export completed!")

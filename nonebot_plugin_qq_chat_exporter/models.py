@@ -23,7 +23,7 @@ class Sender(BaseModel):
     """Sender statistics"""
     uid: str
     name: str
-    messageCount: int = Field(alias="messageCount")
+    messageCount: int
     percentage: float
 
 

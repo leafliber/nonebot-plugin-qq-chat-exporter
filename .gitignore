@@ -40,6 +40,7 @@ htmlcov/
 
 # Export files
 exports/
+example_export.json
 
 # OS
 .DS_Store
