@@ -94,7 +94,7 @@ def test_export_data():
         plain_text="Test"
     )
     export_data = ExportData(metadata=metadata, messages=[msg])
-    
+
     assert export_data.metadata.chat_type == "private"
     assert len(export_data.messages) == 1
     print("✓ ExportData 测试通过")
@@ -107,7 +107,7 @@ def test_json_export():
         chat_id="999",
         message_count=2
     )
-    
+
     messages = [
         ExportMessage(
             message_id="msg1",
@@ -128,21 +128,21 @@ def test_json_export():
             plain_text="Message 2"
         )
     ]
-    
+
     export_data = ExportData(metadata=metadata, messages=messages)
-    
+
     # 测试序列化
     json_dict = export_data.model_dump(mode="json")
     assert json_dict["metadata"]["chat_id"] == "999"
     assert len(json_dict["messages"]) == 2
     assert json_dict["messages"][0]["sender"]["nickname"] == "User1"
-    
+
     # 测试可以转换为 JSON 字符串
     import json
     json_str = json.dumps(json_dict, ensure_ascii=False, indent=2)
     assert "Message 1" in json_str
     assert "User2" in json_str
-    
+
     print("✓ JSON导出 测试通过")
 
 
@@ -152,7 +152,7 @@ def main():
     print("NoneBot QQ Chat Exporter - 核心功能测试")
     print("=" * 60)
     print()
-    
+
     tests = [
         test_message_element,
         test_sender_info,
@@ -161,17 +161,17 @@ def main():
         test_export_data,
         test_json_export,
     ]
-    
+
     for i, test in enumerate(tests, 1):
         try:
             test()
         except Exception as e:
             print(f"✗ 测试 {i} 失败: {e}")
             return False
-    
+
     print()
     print("=" * 60)
-    print("✅ 所有测试通过！共 {} 个测试".format(len(tests)))
+    print(f"✅ 所有测试通过！共 {len(tests)} 个测试")
     print("=" * 60)
     print()
     print("📝 测试总结:")

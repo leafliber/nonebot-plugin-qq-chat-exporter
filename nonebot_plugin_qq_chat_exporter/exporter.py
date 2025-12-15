@@ -99,13 +99,13 @@ async def export_group_messages(
         # 从第一条和最后一条消息获取时间范围
         first_time = export_messages[0].timestamp
         last_time = export_messages[-1].timestamp
-        
+
         # 转换为datetime以计算天数
         try:
-            dt_first = datetime.fromisoformat(first_time.replace('Z', '+00:00'))
-            dt_last = datetime.fromisoformat(last_time.replace('Z', '+00:00'))
+            dt_first = datetime.fromisoformat(first_time.replace("Z", "+00:00"))
+            dt_last = datetime.fromisoformat(last_time.replace("Z", "+00:00"))
             duration_days = (dt_last - dt_first).days
-            
+
             time_range.start = first_time
             time_range.end = last_time
             time_range.durationDays = duration_days
@@ -115,7 +115,7 @@ async def export_group_messages(
     # 创建统计信息
     total_messages = len(export_messages)
     message_types = MessageTypes(unknown=total_messages)
-    
+
     # 转换发送者统计
     senders = [
         SenderStats(
@@ -248,13 +248,13 @@ async def export_private_messages(
         # 从第一条和最后一条消息获取时间范围
         first_time = export_messages[0].timestamp
         last_time = export_messages[-1].timestamp
-        
+
         # 转换为datetime以计算天数
         try:
-            dt_first = datetime.fromisoformat(first_time.replace('Z', '+00:00'))
-            dt_last = datetime.fromisoformat(last_time.replace('Z', '+00:00'))
+            dt_first = datetime.fromisoformat(first_time.replace("Z", "+00:00"))
+            dt_last = datetime.fromisoformat(last_time.replace("Z", "+00:00"))
             duration_days = (dt_last - dt_first).days
-            
+
             time_range.start = first_time
             time_range.end = last_time
             time_range.durationDays = duration_days
@@ -264,7 +264,7 @@ async def export_private_messages(
     # 创建统计信息
     total_messages = len(export_messages)
     message_types = MessageTypes(unknown=total_messages)
-    
+
     # 转换发送者统计
     senders = [
         SenderStats(

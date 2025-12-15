@@ -1,7 +1,6 @@
 """
 兼容 qq-chat-exporter 的数据模型
 """
-from datetime import datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field

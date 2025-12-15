@@ -60,7 +60,7 @@ def test_export_message():
     receiver = MessageReceiver(uid="789", type="group")
     content = MessageContent(text="测试消息", raw="测试消息")
     stats = MessageStats(elementCount=1, resourceCount=0, textLength=4)
-    
+
     message = ExportMessage(
         messageId="msg_001",
         messageSeq="12345",
@@ -92,17 +92,17 @@ def test_export_data():
     """测试完整导出数据模型"""
     chat_info = ChatInfo(name="测试群", type="group")
     statistics = Statistics(totalMessages=2)
-    
+
     sender1 = MessageSender(uid="u_123", uin="123", name="Alice")
     receiver1 = MessageReceiver(uid="789", type="group")
     content1 = MessageContent(text="Hi", raw="Hi")
     stats1 = MessageStats(elementCount=1, textLength=2)
-    
+
     sender2 = MessageSender(uid="u_456", uin="456", name="Bob")
     receiver2 = MessageReceiver(uid="789", type="group")
     content2 = MessageContent(text="Hello", raw="Hello")
     stats2 = MessageStats(elementCount=1, textLength=5)
-    
+
     messages = [
         ExportMessage(
             messageId="msg1",
@@ -121,7 +121,7 @@ def test_export_data():
             stats=stats2
         )
     ]
-    
+
     export_data = ExportData(
         chatInfo=chat_info,
         statistics=statistics,
@@ -142,7 +142,7 @@ def test_json_serialization():
     receiver = MessageReceiver(uid="999", type="group")
     content = MessageContent(text="Test", raw="Test")
     stats = MessageStats(elementCount=1, textLength=4)
-    
+
     message = ExportMessage(
         messageId="test",
         timestamp="2025-01-01T03:20:01.000Z",
@@ -156,7 +156,7 @@ def test_json_serialization():
         statistics=statistics,
         messages=[message]
     )
-    
+
     # 测试序列化
     json_data = export_data.model_dump(mode="json")
     assert json_data["chatInfo"]["type"] == "group"
@@ -168,7 +168,7 @@ def test_json_serialization():
 
 if __name__ == "__main__":
     print("🚀 Running tests for nonebot-plugin-qq-chat-exporter\n")
-    
+
     test_message_sender()
     test_message_receiver()
     test_message_content()
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     test_chat_info()
     test_export_data()
     test_json_serialization()
-    
+
     print("\n✅ All 7 tests passed successfully!")
     print("\nThe core data models are working correctly.")
     print("The plugin is ready for integration with NoneBot2.")

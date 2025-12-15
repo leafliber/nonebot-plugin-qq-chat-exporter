@@ -2,7 +2,6 @@
 消息转换器：将 chatrecorder 格式转换为 qq-chat-exporter 格式
 """
 import logging
-from datetime import datetime
 from typing import Any
 
 from nonebot_plugin_chatrecorder import MessageRecord
@@ -79,7 +78,7 @@ def parse_message_content(message_data: list[dict[str, Any]]) -> tuple[MessageCo
         raw=text,
         resources=resources
     )
-    
+
     return content, text, resource_stats
 
 
@@ -138,7 +137,7 @@ def convert_records_to_export_messages(
             )
 
             # 转换时间戳为ISO格式
-            timestamp = record.time.isoformat(timespec='milliseconds') + 'Z'
+            timestamp = record.time.isoformat(timespec="milliseconds") + "Z"
 
             # 构建消息统计
             stats = MessageStats(
