@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoneBot QQ Chat Exporter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 QQ Chat Exporter</h1>
+        <p class="subtitle">导出 QQ 聊天记录为 JSON 格式</p>
+        
+        <form id="exportForm">
+            <div class="form-group">
+                <label for="chatType">聊天类型</label>
+                <select id="chatType" name="chat_type" required>
+                    <option value="group">群聊</option>
+                    <option value="private">私聊</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="chatId">群号/QQ号</label>
+                <input type="text" id="chatId" name="chat_id" placeholder="请输入群号或QQ号" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="startTime">开始时间（可选）</label>
+                <input type="datetime-local" id="startTime" name="start_time">
+                <p class="help-text">留空则导出所有历史消息</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="endTime">结束时间（可选）</label>
+                <input type="datetime-local" id="endTime" name="end_time">
+                <p class="help-text">留空则导出到当前时间</p>
+            </div>
+            
+            <button type="submit" class="btn" id="submitBtn">
+                开始导出
+            </button>
+        </form>
+        
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        document.getElementById('exportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.textContent = '正在导出...';
+            result.style.display = 'none';
+            
+            const formData = new FormData(e.target);
+            const data = {
+                chat_type: formData.get('chat_type'),
+                chat_id: formData.get('chat_id'),
+                start_time: formData.get('start_time') ? new Date(formData.get('start_time')).toISOString() : null,
+                end_time: formData.get('end_time') ? new Date(formData.get('end_time')).toISOString() : null,
+            };
+            
+            try {
+                const response = await fetch('/qq-chat-exporter/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+                
+                const resultData = await response.json();
+                
+                result.style.display = 'block';
+                if (resultData.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <strong>✓ 导出成功！</strong><br>
+                        文件路径: ${resultData.file_path}
+                    `;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <strong>✗ 导出失败</strong><br>
+                        ${resultData.message}
+                    `;
+                }
+            } catch (error) {
+                result.style.display = 'block';
+                result.className = 'result error';
+                result.innerHTML = `
+                    <strong>✗ 请求失败</strong><br>
+                    ${error.message}
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '开始导出';
+            }
+        });
+    </script>
+</body>
+</html>
