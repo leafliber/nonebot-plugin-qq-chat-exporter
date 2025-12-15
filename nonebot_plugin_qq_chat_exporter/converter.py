@@ -181,11 +181,11 @@ def convert_records_to_export_messages(
             # 根据消息类型判断，一般 record.type 为 "message" 是普通消息
             is_system_message = getattr(record, 'type', 'message') != "message"
 
-            # 获取消息ID，如果不存在则生成一个基于时间戳的唯一ID
+            # 获取消息ID，如果不存在则生成一个基于纳秒时间戳的唯一ID
             message_id = getattr(record, 'message_id', None)
             if not message_id:
-                # 使用纳秒时间戳作为唯一ID，确保不同记录不会产生相同ID
-                message_id = f"msg_{int(time.time() * 1000000)}"
+                # 使用纳秒时间戳作为唯一ID，避免高并发场景下的冲突
+                message_id = f"msg_{time.time_ns()}"
                 logger.debug(f"Generated fallback message_id: {message_id}")
 
             # 构建导出消息
