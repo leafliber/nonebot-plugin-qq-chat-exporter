@@ -7,158 +7,176 @@ from pathlib import Path
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from datetime import datetime
-
 from nonebot_plugin_qq_chat_exporter.models import (
+    ChatInfo,
     ExportData,
     ExportMessage,
-    ExportMetadata,
-    MessageElement,
-    SenderInfo,
+    MessageContent,
+    MessageReceiver,
+    MessageSender,
+    MessageStats,
+    Statistics,
 )
 
 
-def test_message_element():
-    """测试消息元素模型"""
-    element = MessageElement(type="text", data={"text": "Hello"})
-    assert element.type == "text"
-    assert element.data["text"] == "Hello"
-    print("✓ MessageElement model works")
-
-
-def test_sender_info():
-    """测试发送者信息模型"""
-    sender = SenderInfo(
-        user_id="123456",
-        nickname="测试用户",
-        card="群名片",
-        role="admin"
+def test_message_sender():
+    """测试消息发送者模型"""
+    sender = MessageSender(
+        uid="u_123456",
+        uin="123456",
+        name="测试用户"
     )
-    assert sender.user_id == "123456"
-    assert sender.nickname == "测试用户"
-    assert sender.card == "群名片"
-    assert sender.role == "admin"
-    print("✓ SenderInfo model works")
+    assert sender.uid == "u_123456"
+    assert sender.uin == "123456"
+    assert sender.name == "测试用户"
+    print("✓ MessageSender model works")
+
+
+def test_message_receiver():
+    """测试消息接收者模型"""
+    receiver = MessageReceiver(
+        uid="543612610",
+        type="group"
+    )
+    assert receiver.uid == "543612610"
+    assert receiver.type == "group"
+    print("✓ MessageReceiver model works")
+
+
+def test_message_content():
+    """测试消息内容模型"""
+    content = MessageContent(
+        text="Hello World",
+        raw="Hello World"
+    )
+    assert content.text == "Hello World"
+    assert content.raw == "Hello World"
+    print("✓ MessageContent model works")
 
 
 def test_export_message():
     """测试导出消息模型"""
-    sender = SenderInfo(user_id="123", nickname="User")
+    sender = MessageSender(uid="u_123", uin="123", name="User")
+    receiver = MessageReceiver(uid="789", type="group")
+    content = MessageContent(text="测试消息", raw="测试消息")
+    stats = MessageStats(elementCount=1, resourceCount=0, textLength=4)
+
     message = ExportMessage(
-        message_id="msg_001",
-        message_type="message",
-        time=1704067200,
+        messageId="msg_001",
+        messageSeq="12345",
+        timestamp="2025-01-01T03:20:01.000Z",
         sender=sender,
-        elements=[
-            MessageElement(type="text", data={"text": "测试消息"}),
-            MessageElement(type="image", data={"url": "http://example.com/img.jpg"})
-        ],
-        raw_message="测试消息[图片]",
-        plain_text="测试消息"
+        receiver=receiver,
+        content=content,
+        stats=stats
     )
-    assert message.message_id == "msg_001"
-    assert message.sender.user_id == "123"
-    assert len(message.elements) == 2
-    assert message.elements[0].type == "text"
-    assert message.elements[1].type == "image"
+    assert message.messageId == "msg_001"
+    assert message.sender.uid == "u_123"
+    assert message.receiver.type == "group"
+    assert message.content.text == "测试消息"
     print("✓ ExportMessage model works")
 
 
-def test_export_metadata():
-    """测试导出元数据模型"""
-    metadata = ExportMetadata(
-        export_time=datetime(2024, 12, 15, 12, 0, 0),
-        exporter="test-exporter",
-        version="1.0.0",
-        chat_type="group",
-        chat_id="789012",
-        chat_name="测试群聊",
-        message_count=100,
-        time_range={"start": 1704067200, "end": 1704153600}
+def test_chat_info():
+    """测试聊天信息模型"""
+    chat_info = ChatInfo(
+        name="测试群聊",
+        type="group"
     )
-    assert metadata.chat_type == "group"
-    assert metadata.chat_id == "789012"
-    assert metadata.message_count == 100
-    assert metadata.time_range["start"] == 1704067200
-    print("✓ ExportMetadata model works")
+    assert chat_info.name == "测试群聊"
+    assert chat_info.type == "group"
+    print("✓ ChatInfo model works")
 
 
 def test_export_data():
     """测试完整导出数据模型"""
-    metadata = ExportMetadata(
-        chat_type="private",
-        chat_id="123456",
-        message_count=2
-    )
-    
-    sender1 = SenderInfo(user_id="123", nickname="Alice")
-    sender2 = SenderInfo(user_id="456", nickname="Bob")
-    
+    chat_info = ChatInfo(name="测试群", type="group")
+    statistics = Statistics(totalMessages=2)
+
+    sender1 = MessageSender(uid="u_123", uin="123", name="Alice")
+    receiver1 = MessageReceiver(uid="789", type="group")
+    content1 = MessageContent(text="Hi", raw="Hi")
+    stats1 = MessageStats(elementCount=1, textLength=2)
+
+    sender2 = MessageSender(uid="u_456", uin="456", name="Bob")
+    receiver2 = MessageReceiver(uid="789", type="group")
+    content2 = MessageContent(text="Hello", raw="Hello")
+    stats2 = MessageStats(elementCount=1, textLength=5)
+
     messages = [
         ExportMessage(
-            message_id="msg1",
-            message_type="message",
-            time=1704067200,
+            messageId="msg1",
+            timestamp="2025-01-01T03:20:01.000Z",
             sender=sender1,
-            elements=[MessageElement(type="text", data={"text": "Hi"})],
-            raw_message="Hi",
-            plain_text="Hi"
+            receiver=receiver1,
+            content=content1,
+            stats=stats1
         ),
         ExportMessage(
-            message_id="msg2",
-            message_type="message",
-            time=1704067260,
+            messageId="msg2",
+            timestamp="2025-01-01T03:20:02.000Z",
             sender=sender2,
-            elements=[MessageElement(type="text", data={"text": "Hello"})],
-            raw_message="Hello",
-            plain_text="Hello"
+            receiver=receiver2,
+            content=content2,
+            stats=stats2
         )
     ]
-    
-    export_data = ExportData(metadata=metadata, messages=messages)
-    assert export_data.metadata.chat_type == "private"
+
+    export_data = ExportData(
+        chatInfo=chat_info,
+        statistics=statistics,
+        messages=messages
+    )
+    assert export_data.chatInfo.type == "group"
     assert len(export_data.messages) == 2
-    assert export_data.messages[0].sender.nickname == "Alice"
-    assert export_data.messages[1].sender.nickname == "Bob"
+    assert export_data.messages[0].sender.name == "Alice"
+    assert export_data.messages[1].sender.name == "Bob"
     print("✓ ExportData model works")
 
 
 def test_json_serialization():
     """测试 JSON 序列化"""
-    metadata = ExportMetadata(
-        chat_type="group",
-        chat_id="999",
-        message_count=1
-    )
-    sender = SenderInfo(user_id="111", nickname="Test")
+    chat_info = ChatInfo(name="Test Group", type="group")
+    statistics = Statistics(totalMessages=1)
+    sender = MessageSender(uid="u_111", uin="111", name="Test")
+    receiver = MessageReceiver(uid="999", type="group")
+    content = MessageContent(text="Test", raw="Test")
+    stats = MessageStats(elementCount=1, textLength=4)
+
     message = ExportMessage(
-        message_id="test",
-        message_type="message",
-        time=1704067200,
+        messageId="test",
+        timestamp="2025-01-01T03:20:01.000Z",
         sender=sender,
-        elements=[MessageElement(type="text", data={"text": "Test"})],
-        raw_message="Test",
-        plain_text="Test"
+        receiver=receiver,
+        content=content,
+        stats=stats
     )
-    export_data = ExportData(metadata=metadata, messages=[message])
-    
+    export_data = ExportData(
+        chatInfo=chat_info,
+        statistics=statistics,
+        messages=[message]
+    )
+
     # 测试序列化
     json_data = export_data.model_dump(mode="json")
-    assert json_data["metadata"]["chat_type"] == "group"
-    assert json_data["messages"][0]["message_id"] == "test"
+    assert json_data["chatInfo"]["type"] == "group"
+    assert json_data["messages"][0]["messageId"] == "test"
+    assert "metadata" in json_data
+    assert "exportOptions" in json_data
     print("✓ JSON serialization works")
 
 
 if __name__ == "__main__":
     print("🚀 Running tests for nonebot-plugin-qq-chat-exporter\n")
-    
-    test_message_element()
-    test_sender_info()
+
+    test_message_sender()
+    test_message_receiver()
+    test_message_content()
     test_export_message()
-    test_export_metadata()
+    test_chat_info()
     test_export_data()
     test_json_serialization()
-    
-    print("\n✅ All 6 tests passed successfully!")
+
+    print("\n✅ All 7 tests passed successfully!")
     print("\nThe core data models are working correctly.")
     print("The plugin is ready for integration with NoneBot2.")
