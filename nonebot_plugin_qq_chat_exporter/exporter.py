@@ -125,6 +125,20 @@ async def _get_group_member_map(group_id: str) -> dict[str, str]:
     return {}
 
 
+async def _get_group_name(group_id: str) -> str:
+    """
+    获取群名称
+    """
+    try:
+        bot = get_bot()
+        if hasattr(bot, "get_group_info"):
+            group_info = await bot.get_group_info(group_id=int(group_id))
+            return group_info.get("group_name", "")
+    except Exception as e:
+        logger.warning(f"Failed to get group info: {e}")
+    return ""
+
+
 async def export_group_messages(
     group_id: str,
     start_time: Optional[datetime] = None,
@@ -182,9 +196,12 @@ async def export_group_messages(
 
         logger.info(f"Converted {len(export_messages)} messages successfully")
 
+        # 获取群名称
+        group_name = await _get_group_name(group_id) or f"Group {group_id}"
+
         # 创建聊天信息
         chat_info = ChatInfo(
-            name=f"Group {group_id}",
+            name=group_name,
             type="group"
         )
 
