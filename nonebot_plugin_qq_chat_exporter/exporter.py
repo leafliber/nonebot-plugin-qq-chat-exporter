@@ -242,7 +242,8 @@ async def export_group_messages(
                 export_data.model_dump(mode="json"),
                 f,
                 ensure_ascii=False,
-                indent=2
+                indent=None,
+                separators=(',', ':')
             )
 
         logger.info(f"Export completed successfully: {output_file}")
@@ -389,7 +390,8 @@ async def export_private_messages(
                 export_data.model_dump(mode="json"),
                 f,
                 ensure_ascii=False,
-                indent=2
+                indent=None,
+                separators=(',', ':')
             )
 
         logger.info(f"Export completed successfully: {output_file}")
