@@ -219,6 +219,59 @@
         // Initialize
         handleChatTypeChange();
 
+        async function pollTaskStatus(taskId) {
+            const result = document.getElementById('result');
+            const btn = document.getElementById('submitBtn');
+            
+            try {
+                const response = await fetch(`/qq-chat-exporter/tasks/${taskId}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message);
+                }
+                
+                if (data.status === 'completed') {
+                    result.className = 'result success';
+                    const downloadUrl = `/qq-chat-exporter/download?file_path=${encodeURIComponent(data.file_path)}`;
+                    result.innerHTML = `
+                        <strong>✓ 导出成功！</strong><br>
+                        文件路径: ${data.file_path}<br>
+                        <a href="${downloadUrl}" class="btn" style="display: block; margin-top: 10px; text-decoration: none; text-align: center;" target="_blank">下载文件</a>
+                    `;
+                    btn.disabled = false;
+                    btn.textContent = '开始导出';
+                } else if (data.status === 'failed') {
+                    result.className = 'result error';
+                    result.innerHTML = `
+                        <strong>✗ 导出失败</strong><br>
+                        ${data.message}
+                    `;
+                    btn.disabled = false;
+                    btn.textContent = '开始导出';
+                } else {
+                    // Still processing
+                    result.className = 'result';
+                    result.style.background = '#e2e3e5';
+                    result.style.borderColor = '#d6d8db';
+                    result.style.color = '#383d41';
+                    result.innerHTML = `
+                        <strong>⏳ 正在导出中...</strong><br>
+                        请耐心等待，不要关闭页面。
+                    `;
+                    setTimeout(() => pollTaskStatus(taskId), 2000);
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `
+                    <strong>✗ 获取状态失败</strong><br>
+                    ${error.message}
+                `;
+                btn.disabled = false;
+                btn.textContent = '开始导出';
+            }
+        }
+
         document.getElementById('exportForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -226,7 +279,7 @@
             const result = document.getElementById('result');
             
             btn.disabled = true;
-            btn.textContent = '正在导出...';
+            btn.textContent = '正在提交任务...';
             result.style.display = 'none';
             
             const formData = new FormData(e.target);
@@ -250,19 +303,16 @@
                 
                 result.style.display = 'block';
                 if (resultData.success) {
-                    result.className = 'result success';
-                    const downloadUrl = `/qq-chat-exporter/download?file_path=${encodeURIComponent(resultData.file_path)}`;
-                    result.innerHTML = `
-                        <strong>✓ 导出成功！</strong><br>
-                        文件路径: ${resultData.file_path}<br>
-                        <a href="${downloadUrl}" class="btn" style="display: block; margin-top: 10px; text-decoration: none; text-align: center;" target="_blank">下载文件</a>
-                    `;
+                    // Start polling
+                    pollTaskStatus(resultData.task_id);
                 } else {
                     result.className = 'result error';
                     result.innerHTML = `
-                        <strong>✗ 导出失败</strong><br>
+                        <strong>✗ 提交失败</strong><br>
                         ${resultData.message}
                     `;
+                    btn.disabled = false;
+                    btn.textContent = '开始导出';
                 }
             } catch (error) {
                 result.style.display = 'block';
@@ -271,7 +321,6 @@
                     <strong>✗ 请求失败</strong><br>
                     ${error.message}
                 `;
-            } finally {
                 btn.disabled = false;
                 btn.textContent = '开始导出';
             }
