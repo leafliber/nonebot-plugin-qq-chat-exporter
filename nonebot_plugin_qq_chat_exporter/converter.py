@@ -2,6 +2,8 @@
 消息转换器：将 chatrecorder 格式转换为 qq-chat-exporter 格式
 """
 import logging
+import time
+from datetime import datetime
 from typing import Any
 
 from nonebot_plugin_chatrecorder import MessageRecord
@@ -16,6 +18,9 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+# 常量定义
+UNKNOWN_USER_ID = "unknown"
 
 
 def parse_message_content(message_data: list[dict[str, Any]]) -> tuple[MessageContent, str, dict]:
@@ -101,11 +106,29 @@ def convert_records_to_export_messages(
     export_messages = []
     sender_stats = {}
     resource_totals = {"image": 0, "video": 0, "audio": 0, "file": 0}
+    failed_count = 0
 
     for record, session, user in records:
         try:
+            # 验证 record 对象的必要属性
+            if not hasattr(record, 'message'):
+                logger.warning(
+                    "Message record %s missing 'message' attribute, skipping",
+                    getattr(record, "message_id", UNKNOWN_USER_ID)
+                )
+                failed_count += 1
+                continue
+
             # 解析消息内容
             message_data = record.message if isinstance(record.message, list) else []
+            
+            # 如果 message_data 为空或无效，记录并跳过
+            if not message_data:
+                logger.debug(
+                    "Message %s has empty message_data, creating minimal export",
+                    getattr(record, "message_id", UNKNOWN_USER_ID)
+                )
+            
             content, text, resource_stats = parse_message_content(message_data)
 
             # 更新资源统计
@@ -113,11 +136,15 @@ def convert_records_to_export_messages(
                 resource_totals[key] += resource_stats[key]
 
             # 构建发送者信息
-            sender_uid = f"u_{user.user_id}"
-            sender_name = user.user_name or ""
+            # 增加对用户属性的防御性检查
+            user_id = getattr(user, 'user_id', UNKNOWN_USER_ID)
+            sender_uid = f"u_{user_id}"
+            sender_name = getattr(user, 'user_name', None) or ""
+            # uin 应该是用户的数字ID，如果获取失败则使用空字符串
+            user_uin = str(user_id) if user_id != UNKNOWN_USER_ID else ""
             sender = MessageSender(
                 uid=sender_uid,
-                uin=user.user_id,
+                uin=user_uin,
                 name=sender_name
             )
 
@@ -132,12 +159,20 @@ def convert_records_to_export_messages(
 
             # 构建接收者信息
             receiver = MessageReceiver(
-                uid=chat_id,
+                uid=str(chat_id),
                 type=chat_type
             )
 
             # 转换时间戳为ISO格式
-            timestamp = record.time.isoformat(timespec="milliseconds") + "Z"
+            # 增加对时间属性的防御性检查
+            if hasattr(record, 'time') and record.time:
+                timestamp = record.time.isoformat(timespec="milliseconds") + "Z"
+            else:
+                logger.warning(
+                    "Message %s missing time attribute, using current time",
+                    getattr(record, "message_id", UNKNOWN_USER_ID)
+                )
+                timestamp = datetime.now().isoformat(timespec="milliseconds") + "Z"
 
             # 构建消息统计
             stats = MessageStats(
@@ -149,11 +184,18 @@ def convert_records_to_export_messages(
 
             # 判断是否为系统消息
             # 根据消息类型判断，一般 record.type 为 "message" 是普通消息
-            is_system_message = record.type != "message"
+            is_system_message = getattr(record, 'type', 'message') != "message"
+
+            # 获取消息ID，如果不存在则生成一个基于纳秒时间戳的唯一ID
+            message_id = getattr(record, 'message_id', None)
+            if not message_id:
+                # 使用纳秒时间戳作为唯一ID，避免高并发场景下的冲突
+                message_id = f"msg_{time.time_ns()}"
+                logger.debug(f"Generated fallback message_id: {message_id}")
 
             # 构建导出消息
             export_msg = ExportMessage(
-                messageId=record.message_id,
+                messageId=str(message_id),
                 messageSeq="",
                 msgRandom="0",
                 timestamp=timestamp,
@@ -170,21 +212,35 @@ def convert_records_to_export_messages(
 
             export_messages.append(export_msg)
         except (KeyError, AttributeError, ValueError) as e:
-            # 记录转换失败的消息，但继续处理其他消息
+            # 记录转换失败的消息，包含详细错误信息
+            failed_count += 1
             logger.warning(
-                "Failed to convert message %s: %s",
-                getattr(record, "message_id", "unknown"),
-                type(e).__name__
+                "Failed to convert message %s: %s - %s",
+                getattr(record, "message_id", UNKNOWN_USER_ID),
+                type(e).__name__,
+                str(e)
             )
             continue
         except Exception as e:
             # 捕获其他未预期的异常
+            failed_count += 1
             logger.error(
-                "Unexpected error converting message %s: %s",
-                getattr(record, "message_id", "unknown"),
-                type(e).__name__
+                "Unexpected error converting message %s: %s - %s",
+                getattr(record, "message_id", UNKNOWN_USER_ID),
+                type(e).__name__,
+                str(e),
+                exc_info=True
             )
             continue
+
+    # 记录处理结果
+    if failed_count > 0:
+        logger.info(
+            "Conversion completed: %d succeeded, %d failed out of %d total",
+            len(export_messages),
+            failed_count,
+            len(records)
+        )
 
     # 计算发送者统计百分比
     total_messages = len(export_messages)
