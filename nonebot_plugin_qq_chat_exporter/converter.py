@@ -90,7 +90,8 @@ def parse_message_content(message_data: list[dict[str, Any]]) -> tuple[MessageCo
 def convert_records_to_export_messages(
     records: list[tuple[MessageRecord, SessionModel, UserModel]],
     chat_type: str,
-    chat_id: str
+    chat_id: str,
+    nickname_map: dict[str, str] = None
 ) -> tuple[list[ExportMessage], dict[str, Any]]:
     """
     批量转换消息记录
@@ -99,6 +100,7 @@ def convert_records_to_export_messages(
         records: (消息记录, 会话模型, 用户模型) 元组列表
         chat_type: 聊天类型 ("group" or "private")
         chat_id: 聊天ID
+        nickname_map: 用户昵称映射 {user_id: nickname}
 
     Returns:
         (导出消息列表, 统计信息字典)
@@ -107,6 +109,7 @@ def convert_records_to_export_messages(
     sender_stats = {}
     resource_totals = {"image": 0, "video": 0, "audio": 0, "file": 0}
     failed_count = 0
+    nickname_map = nickname_map or {}
 
     for record, session, user in records:
         try:
@@ -139,7 +142,10 @@ def convert_records_to_export_messages(
             # 增加对用户属性的防御性检查
             user_id = getattr(user, 'user_id', UNKNOWN_USER_ID)
             sender_uid = f"u_{user_id}"
-            sender_name = getattr(user, 'user_name', None) or ""
+            
+            # 优先使用传入的昵称映射，其次使用数据库中的名字
+            sender_name = nickname_map.get(str(user_id)) or getattr(user, 'user_name', None) or ""
+            
             # uin 应该是用户的数字ID，如果获取失败则使用空字符串
             user_uin = str(user_id) if user_id != UNKNOWN_USER_ID else ""
             sender = MessageSender(

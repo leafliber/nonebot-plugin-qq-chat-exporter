@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from nonebot import get_bot
 from nonebot_plugin_chatrecorder import get_message_records, MessageRecord
 from nonebot_plugin_orm import get_session
 from nonebot_plugin_uninfo import SceneType
@@ -106,6 +107,24 @@ async def _load_records_with_info(records: list[MessageRecord]):
     return records_with_info
 
 
+async def _get_group_member_map(group_id: str) -> dict[str, str]:
+    """
+    获取群成员昵称映射
+    """
+    try:
+        bot = get_bot()
+        # 尝试调用 get_group_member_list (OneBot V11)
+        if hasattr(bot, "get_group_member_list"):
+            members = await bot.get_group_member_list(group_id=int(group_id))
+            return {
+                str(m["user_id"]): m.get("card") or m.get("nickname") or ""
+                for m in members
+            }
+    except Exception as e:
+        logger.warning(f"Failed to get group member list: {e}")
+    return {}
+
+
 async def export_group_messages(
     group_id: str,
     start_time: Optional[datetime] = None,
@@ -152,10 +171,13 @@ async def export_group_messages(
             # 使用批量加载获取关联信息
             records_with_info = await _load_records_with_info(records)
 
+        # 获取群成员昵称映射
+        nickname_map = await _get_group_member_map(group_id)
+
         # 转换消息格式
         logger.info("Converting messages to export format")
         export_messages, statistics_data = convert_records_to_export_messages(
-            records_with_info, "group", group_id
+            records_with_info, "group", group_id, nickname_map
         )
 
         logger.info(f"Converted {len(export_messages)} messages successfully")
