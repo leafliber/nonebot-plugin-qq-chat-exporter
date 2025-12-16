@@ -127,7 +127,7 @@ async def export_group_messages(
     try:
         # 设置默认输出目录
         if output_dir is None:
-            output_dir = "exports"
+            output_dir = "data/qq_record_exports"
 
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
@@ -274,7 +274,7 @@ async def export_private_messages(
     try:
         # 设置默认输出目录
         if output_dir is None:
-            output_dir = "exports"
+            output_dir = "data/qq_record_exports"
 
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)

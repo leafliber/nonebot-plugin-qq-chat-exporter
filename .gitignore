@@ -69,6 +69,6 @@ Thumbs.db
 poetry.lock
 
 # Export files
-exports/
+data/qq_record_exports/
 *.db
 *.sqlite
