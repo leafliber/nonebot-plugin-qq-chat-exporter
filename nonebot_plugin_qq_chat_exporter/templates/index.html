@@ -127,12 +127,20 @@
         <form id="exportForm">
             <div class="form-group">
                 <label for="chatType">聊天类型</label>
-                <select id="chatType" name="chat_type" required>
+                <select id="chatType" name="chat_type" required onchange="handleChatTypeChange()">
                     <option value="group">群聊</option>
                     <option value="private">私聊</option>
                 </select>
             </div>
             
+            <div class="form-group" id="groupSelectContainer" style="display: none;">
+                <label for="groupSelect">选择群聊</label>
+                <select id="groupSelect" onchange="handleGroupSelect()">
+                    <option value="">加载中...</option>
+                </select>
+                <p class="help-text">从列表中选择，或在下方手动输入</p>
+            </div>
+
             <div class="form-group">
                 <label for="chatId">群号/QQ号</label>
                 <input type="text" id="chatId" name="chat_id" placeholder="请输入群号或QQ号" required>
@@ -159,6 +167,58 @@
     </div>
     
     <script>
+        let groupListLoaded = false;
+
+        async function loadGroupList() {
+            const groupSelect = document.getElementById('groupSelect');
+            try {
+                const response = await fetch('/qq-chat-exporter/groups');
+                const result = await response.json();
+                
+                groupSelect.innerHTML = '<option value="">-- 请选择群聊 --</option>';
+                
+                if (result.success && result.data.length > 0) {
+                    result.data.forEach(group => {
+                        const option = document.createElement('option');
+                        option.value = group.id;
+                        option.textContent = `${group.name} (${group.id})`;
+                        groupSelect.appendChild(option);
+                    });
+                    groupListLoaded = true;
+                } else {
+                    groupSelect.innerHTML = '<option value="">无法获取群列表</option>';
+                }
+            } catch (error) {
+                console.error('Failed to load groups:', error);
+                groupSelect.innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+
+        function handleChatTypeChange() {
+            const chatType = document.getElementById('chatType').value;
+            const groupSelectContainer = document.getElementById('groupSelectContainer');
+            
+            if (chatType === 'group') {
+                groupSelectContainer.style.display = 'block';
+                if (!groupListLoaded) {
+                    loadGroupList();
+                }
+            } else {
+                groupSelectContainer.style.display = 'none';
+            }
+        }
+
+        function handleGroupSelect() {
+            const groupSelect = document.getElementById('groupSelect');
+            const chatIdInput = document.getElementById('chatId');
+            if (groupSelect.value) {
+                chatIdInput.value = groupSelect.value;
+            }
+        }
+
+        // Initialize
+        handleChatTypeChange();
+
         document.getElementById('exportForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             

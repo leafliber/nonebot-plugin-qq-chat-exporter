@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from nonebot import get_driver, require
+from nonebot import get_driver, require, get_bot
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from pydantic import BaseModel
@@ -37,6 +37,26 @@ class ExportResponse(BaseModel):
 # 获取 FastAPI 应用实例
 driver = get_driver()
 app: FastAPI = driver.server_app
+
+
+@app.get("/qq-chat-exporter/groups")
+async def get_groups():
+    """获取群列表"""
+    try:
+        bot = get_bot()
+        if hasattr(bot, "get_group_list"):
+            groups = await bot.get_group_list()
+            return {
+                "success": True,
+                "data": [
+                    {"id": str(g["group_id"]), "name": g["group_name"]}
+                    for g in groups
+                ]
+            }
+    except Exception as e:
+        logger.warning(f"Failed to get group list: {e}")
+    
+    return {"success": False, "message": "Failed to get group list", "data": []}
 
 
 @app.get("/qq-chat-exporter", response_class=HTMLResponse)
