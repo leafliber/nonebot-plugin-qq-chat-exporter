@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from nonebot_plugin_chatrecorder import get_message_records
+from nonebot_plugin_chatrecorder import get_message_records, MessageRecord
 from nonebot_plugin_orm import get_session
 from nonebot_plugin_uninfo import SceneType
 from nonebot_plugin_uninfo.orm import SessionModel, UserModel
