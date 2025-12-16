@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Optional
 
 from nonebot import get_driver, require
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from pydantic import BaseModel
 
 require("nonebot_plugin_chatrecorder")
@@ -141,6 +141,20 @@ async def export_messages(request: ExportRequest):
                 "message": f"导出失败: {type(e).__name__} - {str(e)}"
             }
         )
+
+
+@app.get("/qq-chat-exporter/download")
+async def download_file(file_path: str = Query(..., description="File path to download")):
+    """下载文件接口"""
+    path = Path(file_path)
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        path=path,
+        filename=path.name,
+        media_type="application/octet-stream"
+    )
 
 
 @app.get("/qq-chat-exporter/health")

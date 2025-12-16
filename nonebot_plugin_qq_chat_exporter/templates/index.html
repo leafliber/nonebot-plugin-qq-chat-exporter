@@ -191,9 +191,11 @@
                 result.style.display = 'block';
                 if (resultData.success) {
                     result.className = 'result success';
+                    const downloadUrl = `/qq-chat-exporter/download?file_path=${encodeURIComponent(resultData.file_path)}`;
                     result.innerHTML = `
                         <strong>✓ 导出成功！</strong><br>
-                        文件路径: ${resultData.file_path}
+                        文件路径: ${resultData.file_path}<br>
+                        <a href="${downloadUrl}" class="btn" style="display: block; margin-top: 10px; text-decoration: none; text-align: center;" target="_blank">下载文件</a>
                     `;
                 } else {
                     result.className = 'result error';
